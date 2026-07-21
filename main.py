@@ -1,15 +1,10 @@
 import requests
 
-def get_recipe(meal_name):
-    url = "https://www.themealdb.com/api/json/v1/1/search.php"
+def get_meal():
+    url = "https://www.themealdb.com/api/json/v1/1/random.php"
 
-    response = requests.get(url, params={"s": meal_name})
-    data = response.json()
-
-    if not data.get("meals"):
-        return None
-
-    meal = data["meals"][0]
+    response = requests.get(url)
+    meal = response.json()["meals"][0]
 
     ingredients = []
 
@@ -30,9 +25,7 @@ def get_recipe(meal_name):
 start = input("Do you want starting? (start/q) ")
 
 if start == "start":
-    meal = input("Enter meal name: ")
-
-    recipe = get_recipe(meal)
+    recipe = get_meal()
 
     if recipe:
         print("Name:", recipe["name"])
@@ -42,8 +35,6 @@ if start == "start":
 
         print("\nInstructions:")
         print(recipe["instructions"])
-    else:
-        print("Recipe not found")
 
 elif start == "q":
     print("Goodbye")
