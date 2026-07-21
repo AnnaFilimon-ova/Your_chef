@@ -1,4 +1,10 @@
 import requests
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+TOKEN = os.getenv("TOKEN")
 
 def get_meal():
     url = "https://www.themealdb.com/api/json/v1/1/random.php"
