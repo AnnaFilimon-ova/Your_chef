@@ -20,8 +20,18 @@ def send_welcome(message):
 @bot.message_handler(func=lambda message: True)
 def check_button(message):
     if message.text == "Meal":
-        meal_text = print_meal()
-        bot.reply_to(message, meal_text)
+        recipe = get_meal()
+        meal_text = format_meal(recipe)
+
+        bot.send_photo(
+            message.chat.id,
+            recipe["image"]
+        )
+
+        bot.send_message(
+            message.chat.id,
+            meal_text
+        )
 
 def get_meal():
     url = "https://www.themealdb.com/api/json/v1/1/random.php"
@@ -41,18 +51,20 @@ def get_meal():
     return {
         "name": meal["strMeal"],
         "ingredients": ingredients,
-        "instructions": meal["strInstructions"]
+        "instructions": meal["strInstructions"],
+        "image": meal["strMealThumb"]
     }
 
-def print_meal():
-    recipe = get_meal()
-    text = f"Name: {recipe["name"]} \n"
-    text += "\nIngredients: \n"
-    for item in recipe["ingredients"]:
-        text += f"- {item} \n"
+def format_meal(recipe):
+    text = f"Name: {recipe['name']}\n\n"
 
-    text +="\nInstructions:"
-    text += f"{recipe['instructions']}"
+    text += "Ingredients:\n"
+    for item in recipe["ingredients"]:
+        text += f"- {item}\n"
+
+    text += "\nInstructions:\n"
+    text += recipe["instructions"]
+
     return text
 
 bot.polling()
