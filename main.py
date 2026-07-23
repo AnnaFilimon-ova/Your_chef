@@ -1,10 +1,27 @@
 import requests
 import os
 from dotenv import load_dotenv
+import telebot
+from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 
 load_dotenv()
 
 TOKEN = os.getenv("TOKEN")
+
+bot = telebot.TeleBot(token=TOKEN)
+
+reply_keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
+reply_keyboard.add(KeyboardButton("Meal"))
+
+@bot.message_handler(commands=["start"])
+def send_welcome(message):
+    bot.reply_to(message, "Click the button", reply_markup=reply_keyboard)
+
+@bot.message_handler(func=lambda message: True)
+def check_button(message):
+    if message.text == "Meal":
+        meal_text = print_meal()
+        bot.reply_to(message, meal_text)
 
 def get_meal():
     url = "https://www.themealdb.com/api/json/v1/1/random.php"
@@ -27,23 +44,15 @@ def get_meal():
         "instructions": meal["strInstructions"]
     }
 
-#Start work
-start = input("Do you want starting? (start/q) ")
-
-if start == "start":
+def print_meal():
     recipe = get_meal()
+    text = f"Name: {recipe["name"]} \n"
+    text += "\nIngredients: \n"
+    for item in recipe["ingredients"]:
+        text += f"- {item} \n"
 
-    if recipe:
-        print("Name:", recipe["name"])
-        print("\nIngredients:")
-        for item in recipe["ingredients"]:
-            print("-", item)
+    text +="\nInstructions:"
+    text += f"{recipe['instructions']}"
+    return text
 
-        print("\nInstructions:")
-        print(recipe["instructions"])
-
-elif start == "q":
-    print("Goodbye")
-
-else:
-    print("Value error")
+bot.polling()
