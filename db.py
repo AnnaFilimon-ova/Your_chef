@@ -49,7 +49,7 @@ def get_blacklist(user_id):
     result = cursor.fetchall()
     conn.close()
 
-    return [item[0] for item in result]
+    return [item[0].strip().lower() for item in result]
 
 def remove_ingredient(user_id, ingredient):
     conn = connect()

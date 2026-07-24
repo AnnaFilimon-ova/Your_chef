@@ -24,7 +24,7 @@ def send_welcome(message):
 @bot.message_handler(func=lambda message: True)
 def check_button(message):
     if message.text == "Meal":
-        recipe = get_meal()
+        recipe = get_meal(message.from_user.id)
         meal_text = format_meal(recipe)
 
         bot.send_photo(
@@ -78,35 +78,45 @@ def add_blacklist_ingredient(message):
     )
 
 
-def get_meal():
-    url = "https://www.themealdb.com/api/json/v1/1/random.php"
+def get_meal(user_id):
+    blacklist = get_blacklist(user_id)
 
-    response = requests.get(url)
-    meal = response.json()["meals"][0]
+    while True:
+        url = "https://www.themealdb.com/api/json/v1/1/random.php"
+        response = requests.get(url)
+        meal = response.json()["meals"][0]
 
-    ingredients = []
+        ingredients = []
+        has_blacklist = False
 
-    for i in range(1, 21):
-        ingredient = meal.get(f"strIngredient{i}")
-        measure = meal.get(f"strMeasure{i}")
+        for i in range(1, 21):
+            ingredient = meal.get(f"strIngredient{i}")
+            measure = meal.get(f"strMeasure{i}")
 
-        if ingredient and ingredient.strip():
-            ingredients.append(f"{measure} {ingredient}")
+            if ingredient and ingredient.strip():
+                ingredient_name = ingredient.strip().lower()
 
-    return {
-        "name": meal["strMeal"],
-        "ingredients": ingredients,
-        "instructions": meal["strInstructions"],
-        "image": meal["strMealThumb"]
-    }
+                if ingredient_name in blacklist:
+                    has_blacklist = True
+                    break
+
+                ingredients.append(f"{measure} {ingredient}")
+
+        if has_blacklist:
+            continue
+
+        return {
+            "name": meal["strMeal"],
+            "ingredients": ingredients,
+            "instructions": meal["strInstructions"],
+            "image": meal["strMealThumb"]
+        }
 
 def format_meal(recipe):
     text = f"Name: {recipe['name']}\n\n"
-
     text += "Ingredients:\n"
     for index, item in enumerate(recipe["ingredients"], start=1):
         text += f"{index} - {item}\n"
-
     text += "\nInstructions:\n"
     text += recipe["instructions"]
 
