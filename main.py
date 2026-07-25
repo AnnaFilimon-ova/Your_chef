@@ -1,108 +1,168 @@
-import requests
 import os
-from dotenv import load_dotenv
+import requests
 import telebot
+from dotenv import load_dotenv
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton
-from db import create_table, get_blacklist, add_ingredient
+from db import create_table, get_blacklist, add_ingredient, remove_ingredient
 
 create_table()
 
 load_dotenv()
-
 TOKEN = os.getenv("TOKEN")
 
-bot = telebot.TeleBot(token=TOKEN)
+bot = telebot.TeleBot(TOKEN)
 
 reply_keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
 reply_keyboard.add(KeyboardButton("Meal"))
 reply_keyboard.add(KeyboardButton("BlackList"))
+reply_keyboard.add(KeyboardButton("Delete BlackList"))
 
 @bot.message_handler(commands=["start"])
 def send_welcome(message):
-    bot.send_message(message.chat.id, "Welcome! \nClick the button, please", reply_markup=reply_keyboard)
+    bot.send_message(
+        message.chat.id,
+        "Welcome!\nChoose an option:",
+        reply_markup=reply_keyboard
+    )
 
 @bot.message_handler(func=lambda message: True)
-def check_button(message):
+def menu(message):
     if message.text == "Meal":
         recipe = get_meal(message.from_user.id)
-        meal_text = format_meal(recipe)
 
-        bot.send_photo(
-            message.chat.id,
-            recipe["image"]
-        )
-
-        bot.send_message(
-            message.chat.id,
-            meal_text
-        )
+        if recipe is None:
+            bot.send_message(
+                message.chat.id,
+                "Couldn't find a meal without your blacklisted ingredients."
+            )
+            return
+        bot.send_photo(message.chat.id, recipe["image"])
+        bot.send_message(message.chat.id, format_meal(recipe))
 
     elif message.text == "BlackList":
-        user_id = message.from_user.id
-        blacklist = get_blacklist(user_id)
-
-        if blacklist:
-            bot.send_message(
-                message.chat.id,
-                "Your Black List:\n " + "\n".join(blacklist)
-            )
-        else:
-            bot.send_message(
-                message.chat.id,
-                "Your Black List is empty."
-            )
-
-        bot.send_message(
+        show_blacklist(message.chat.id, message.from_user.id)
+        msg = bot.send_message(
             message.chat.id,
-            "Enter the ingredient: "
+            "Enter an ingredient to add:"
         )
-        bot.register_next_step_handler(
-            message,
-            add_blacklist_ingredient
+        bot.register_next_step_handler(msg, add_blacklist_ingredient)
+
+    elif message.text == "Delete BlackList":
+        show_blacklist(message.chat.id, message.from_user.id)
+        msg = bot.send_message(
+            message.chat.id,
+            "Enter an ingredient to delete:"
+        )
+        bot.register_next_step_handler(msg, delete_blacklist_ingredient)
+
+def show_blacklist(chat_id, user_id):
+    blacklist = get_blacklist(user_id)
+
+    if blacklist:
+        bot.send_message(
+            chat_id,
+            "Your Black List:\n\n" + "\n".join(blacklist)
+        )
+    else:
+        bot.send_message(
+            chat_id,
+            "Your Black List is empty."
         )
 
 def add_blacklist_ingredient(message):
-    user_id = message.from_user.id
-    ingredient = message.text.lower()
+    if message.text.startswith("/"):
+        return
 
-    add_ingredient(user_id, ingredient)
+    ingredient = message.text.strip().lower()
+    if not ingredient:
+        bot.send_message(message.chat.id, "Ingredient cannot be empty.")
+        return
+
+    if ingredient.lower() in (
+        "meal",
+        "blacklist",
+        "delete blacklist"
+    ):
+        return
+
+    add_ingredient(message.from_user.id, ingredient)
+
+    blacklist = get_blacklist(message.from_user.id)
+    if ingredient in blacklist:
+        bot.send_message(
+            message.chat.id,
+            f'"{ingredient}" is already in your blacklist.'
+        )
+        return
+    
     bot.send_message(
         message.chat.id,
-        f"Your added {ingredient}."
+        f'"{ingredient}" added.'
     )
-    blacklist = get_blacklist(user_id)
+
+    show_blacklist(message.chat.id, message.from_user.id)
+
+def delete_blacklist_ingredient(message):
+    if message.text.startswith("/"):
+        return
+
+    ingredient = message.text.strip().lower()
+    if not ingredient:
+        bot.send_message(message.chat.id, "Ingredient cannot be empty.")
+        return
+
+    if ingredient.lower() in (
+        "meal",
+        "blacklist",
+        "delete blacklist"
+    ):
+        return
+
+    remove_ingredient(message.from_user.id, ingredient)
 
     bot.send_message(
         message.chat.id,
-        "Your Black List:\n " + "\n".join(blacklist)
+        f'"{ingredient}" removed.'
     )
 
+    show_blacklist(message.chat.id, message.from_user.id)
 
 def get_meal(user_id):
-    blacklist = get_blacklist(user_id)
+    blacklist = [i.lower() for i in get_blacklist(user_id)]
+    for _ in range(50):
+        try:
+            response = requests.get(
+                "https://www.themealdb.com/api/json/v1/1/random.php",
+                timeout=10
+            )
 
-    while True:
-        url = "https://www.themealdb.com/api/json/v1/1/random.php"
-        response = requests.get(url)
-        meal = response.json()["meals"][0]
+            response.raise_for_status()
+            meal = response.json()["meals"][0]
+
+        except Exception:
+            return None
 
         ingredients = []
-        has_blacklist = False
+        blocked = False
 
         for i in range(1, 21):
+
             ingredient = meal.get(f"strIngredient{i}")
             measure = meal.get(f"strMeasure{i}")
 
             if ingredient and ingredient.strip():
+
                 ingredient_name = ingredient.strip().lower()
 
                 if ingredient_name in blacklist:
-                    has_blacklist = True
+                    blocked = True
                     break
 
-                ingredients.append(f"{measure} {ingredient}")
+                ingredients.append(
+                    f"{measure.strip() if measure else ''} {ingredient}".strip()
+                )
 
-        if has_blacklist:
+        if blocked:
             continue
 
         return {
@@ -112,14 +172,15 @@ def get_meal(user_id):
             "image": meal["strMealThumb"]
         }
 
+    return None
+
 def format_meal(recipe):
     text = f"Name: {recipe['name']}\n\n"
     text += "Ingredients:\n"
-    for index, item in enumerate(recipe["ingredients"], start=1):
-        text += f"{index} - {item}\n"
+    for i, ingredient in enumerate(recipe["ingredients"], 1):
+        text += f"{i}. {ingredient}\n"
     text += "\nInstructions:\n"
     text += recipe["instructions"]
-
     return text
 
-bot.polling()
+bot.polling(none_stop=True)

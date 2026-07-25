@@ -2,8 +2,10 @@ import sqlite3
 
 db = "BlackList.db"
 
+
 def connect():
     return sqlite3.connect(db)
+
 
 def create_table():
     conn = connect()
@@ -11,13 +13,15 @@ def create_table():
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS blacklist (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    ingredient INTEGER NOT NULL
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        ingredient TEXT NOT NULL
     )
     """)
+
     conn.commit()
     conn.close()
+
 
 def add_ingredient(user_id, ingredient):
     conn = connect()
@@ -30,8 +34,10 @@ def add_ingredient(user_id, ingredient):
         """,
         (user_id, ingredient.lower())
     )
+
     conn.commit()
     conn.close()
+
 
 def get_blacklist(user_id):
     conn = connect()
@@ -51,6 +57,7 @@ def get_blacklist(user_id):
 
     return [item[0].strip().lower() for item in result]
 
+
 def remove_ingredient(user_id, ingredient):
     conn = connect()
     cursor = conn.cursor()
@@ -58,9 +65,10 @@ def remove_ingredient(user_id, ingredient):
     cursor.execute(
         """
         DELETE FROM blacklist
-        WHERE user_id = ? AND ingredient_id = ?
+        WHERE user_id = ? AND ingredient = ?
         """,
         (user_id, ingredient.lower())
     )
+
     conn.commit()
     conn.close()
