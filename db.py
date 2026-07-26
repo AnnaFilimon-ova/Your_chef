@@ -2,10 +2,8 @@ import sqlite3
 
 db = "BlackList.db"
 
-
 def connect():
     return sqlite3.connect(db)
-
 
 def create_table():
     conn = connect()
@@ -21,7 +19,6 @@ def create_table():
 
     conn.commit()
     conn.close()
-
 
 def add_ingredient(user_id, ingredient):
     conn = connect()
@@ -56,7 +53,6 @@ def get_blacklist(user_id):
     conn.close()
 
     return [item[0].strip().lower() for item in result]
-
 
 def remove_ingredient(user_id, ingredient):
     conn = connect()
