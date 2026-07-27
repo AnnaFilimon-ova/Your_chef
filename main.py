@@ -5,6 +5,7 @@ from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 from db import create_table, get_blacklist, add_ingredient, remove_ingredient, clear_blacklist
 from flask import Flask
 import threading
+import requests
 
 app = Flask(__name__)
 
