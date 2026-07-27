@@ -191,6 +191,7 @@ def get_meal(user_id):
 def format_meal(recipe):
     text = f"Name: {recipe['name']}\n\n"
     text += "Ingredients:\n"
+    text += "\n tea - teaspoon \n tbsp/tblsp - tablespoon \n\n"
     for i, ingredient in enumerate(recipe["ingredients"], 1):
         text += f"{i}. {ingredient}\n"
     text += "\nInstructions:\n"
