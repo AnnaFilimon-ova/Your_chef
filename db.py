@@ -65,6 +65,15 @@ def remove_ingredient(user_id, ingredient):
         """,
         (user_id, ingredient.lower())
     )
+    conn.commit()
+    conn.close()
 
+def clear_blacklist(user_id):
+    conn = sqlite3.connect("BlackList.db")
+    cursor = conn.cursor()
+    cursor.execute(
+        "DELETE FROM blacklist WHERE user_id = ?",
+        (user_id,)
+    )
     conn.commit()
     conn.close()

@@ -2,7 +2,7 @@ import os
 import telebot
 from dotenv import load_dotenv
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton
-from db import create_table, get_blacklist, add_ingredient, remove_ingredient
+from db import create_table, get_blacklist, add_ingredient, remove_ingredient, clear_blacklist
 from flask import Flask
 import threading
 
@@ -31,6 +31,7 @@ reply_keyboard.add(KeyboardButton("Delete BlackList"))
 
 @bot.message_handler(commands=["start"])
 def send_welcome(message):
+    clear_blacklist(message.from_user.id)
     bot.send_message(
         message.chat.id,
         "Welcome!\nChoose an option:",
