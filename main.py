@@ -194,7 +194,7 @@ def format_meal(recipe):
     for i, ingredient in enumerate(recipe["ingredients"], 1):
         text += f"{i}. {ingredient}\n"
     text += "\nInstructions:\n"
-    text += recipe["instructions"]
+    text += recipe["instructions\n"]
     text += "\ntea - teaspoon \ntbsp/tblsp - tablespoon"
     return text
 
