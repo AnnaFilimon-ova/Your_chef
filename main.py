@@ -102,12 +102,6 @@ def add_blacklist_ingredient(message):
     add_ingredient(message.from_user.id, ingredient)
 
     blacklist = get_blacklist(message.from_user.id)
-    if ingredient in blacklist:
-        bot.send_message(
-            message.chat.id,
-            f'"{ingredient}" is already in your blacklist.'
-        )
-        return
     
     bot.send_message(
         message.chat.id,
@@ -115,6 +109,13 @@ def add_blacklist_ingredient(message):
     )
 
     show_blacklist(message.chat.id, message.from_user.id)
+
+    if ingredient in blacklist:
+        bot.send_message(
+            message.chat.id,
+            f'"{ingredient}" is already in your blacklist.'
+        )
+        return
 
 def delete_blacklist_ingredient(message):
     if message.text.startswith("/"):
