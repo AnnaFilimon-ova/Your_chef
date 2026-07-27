@@ -1,4 +1,4 @@
-import pysqlite3 as sqlite3
+import sqlite3
 
 db = "BlackList.db"
 
