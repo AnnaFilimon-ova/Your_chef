@@ -10,6 +10,8 @@ create_table()
 load_dotenv()
 TOKEN = os.getenv("TOKEN")
 
+print("TOKEN:", os.environ.get("TOKEN"))
+
 bot = telebot.TeleBot(TOKEN)
 
 reply_keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
