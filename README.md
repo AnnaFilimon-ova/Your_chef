@@ -15,8 +15,10 @@ Telegram Bot that gives you a random dish along with its recipe. Simply click th
 
 ## ⚙️ Installation
 ```bash
-open https://web.telegram.org
-open @ChefYourBot
+git clone <https://github.com/AnnaFilimon-ova/Your_chef.git>
+cd Your_chef
+source venv/bin/activate
+python main.py
 ```
 
 ## 🛠 Tech Stack
